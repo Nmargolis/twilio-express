@@ -1,17 +1,17 @@
-var http = require('http'),
+const http = require('http'),
     twilio = require('twilio'),
     express = require('express'),
     urlencoded = require('body-parser').urlencoded;
 
-var app = express();
+const app = express();
 
 app.use(urlencoded({ extended: false}));
 
 app.post('/answer', function(request, response) {
   // Use the Twilio Node.js SDK to build an XML response
-  var twiml = new twilio.TwimlResponse();
-  var text = '';
-  var fromNumber = request.body.From;
+  let twiml = new twilio.TwimlResponse();
+  let text = '';
+  let fromNumber = request.body.From;
   twiml.say('Hello, you have reached the network activation center.', { voice: 'alice' });
   
   // getPhoneNumber();
@@ -19,6 +19,9 @@ app.post('/answer', function(request, response) {
 
   // Send sms text
   // sendText();
+  // Render the response as XML in reply to the webhook request
+  response.type('text/xml');
+  response.send(twiml.toString());
 
 });
 

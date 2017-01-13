@@ -144,7 +144,6 @@ app.post('/deployMessages', (request, response) => {
   response.send(twiml.toString());
 });
 
-
 // Helpers
 function sendText(number, message) {
   // var client = require('twilio')(accountSid, authToken);

@@ -17,6 +17,7 @@
     "gulp-watch": "^4.3.11"
   },
   "scripts": {
+    "preinstall": "gulp",
     "build": "gulp",
     "start": "node dist/server.js"
   },

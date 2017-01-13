@@ -182,8 +182,6 @@ function sendText(number, message) {
       console.log("ERROR:", err);
     }
     console.log(message.sid);
-  });
-}
 
 // TESTING functions
 // test functions execute the same logic as the "real" functions without

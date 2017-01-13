@@ -119,12 +119,36 @@ app.post('/sayRights', (request, response) => {
 app.post('/recordMessage', (request, response) => {
   let twiml = new twilio.TwimlResponse();
 
-  twiml.say('Record your message after the beep. To Do.', {voice: 'alice'});
+  twiml.say('Record your message after the beep.', {voice: 'alice'});
+
+  twiml.record({transcribe: true, maxLength: 30, recordingStatusCallback: '/recordingCallback'})
+  response.type('text/xml');
+  response.send(twiml.toString());
+});
+
+app.post('/recordingCallback', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+  console.log(request.body.RecordingUrl);
+
+  let recordingUrl = request.body.RecordingUrl;
+
+  sendText('+15104499800', recordingUrl);
+
+  // twiml.redirect('/sayMainOptions');
+
+  // twiml.say('Record your message after the beep. To Do.', {voice: 'alice'});
 
   response.type('text/xml');
   response.send(twiml.toString());
 });
 
+app.post('/handleRecording', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+
+  console.log(request.body)
+  response.type('text/xml');
+  response.send(twiml.toString());
+})
 
 app.post('/deployMessages', (request, response) => {
   let twiml = new twilio.TwimlResponse();
@@ -137,12 +161,16 @@ app.post('/deployMessages', (request, response) => {
 
 
 //Helpers
-var sendText = function() {
+var sendText = function(number, body) {
   // var client = require('twilio')(accountSid, authToken); 
+  if (!body) {
+    let body = "Natalia's in trouble. Pick up her kids!"
+  }
+
   client.messages.create({ 
       to: "+15104499800", 
       from: "+16506655133", 
-      body: "Natalia's in trouble. Pick up her kids!", 
+      body: body, 
   }, function(err, message) { 
       console.log(message.sid); 
   });

@@ -24,7 +24,6 @@ app.post('/answer', function(request, response) {
 
   twiml.redirect('/getId');
 
-
   // Render the response as XML in reply to the webhook request
   response.type('text/xml');
   response.send(twiml.toString());
@@ -55,7 +54,7 @@ app.post('/validateId', (request, response) => {
 
     let userId = phoneNumber;
 
-    let uri = '/showMainOptions/?id=' + userId;
+    let uri = '/sayMainOptions/?id=' + userId;
 
     twiml.redirect(uri);
   }
@@ -65,20 +64,66 @@ app.post('/validateId', (request, response) => {
   response.send(twiml.toString());
 })
 
-app.post('/showMainOptions', (request, response) => {
+app.post('/sayMainOptions', (request, response) => {
   // Use the Twilio Node.js SDK to build an XML response
   let twiml = new twilio.TwimlResponse();
 
-  let userId = request.query.id;
+  if (request.query.id) {
+    let userId = request.query.id;
 
-  twiml.say('Your id is ' + userId + '.');
+    twiml.say('Your id is ' + userId + '.');
+  }
 
   twiml.say('Here are your options.', { voice: 'alice' });
+
+  twiml.gather({ timeout: 5, action: '/handleMainOption'}, (gatherNode) => {
+    gatherNode.say('Press 1 to hear your rights. Press 2 to record a message. Press 3 to send out your messages.', { voice: 'alice'});
+  });
+
+  twiml.redirect('/sayMainOptions');
 
   // Render the response as XML in reply to the webhook request
   response.type('text/xml');
   response.send(twiml.toString());
 })
+
+app.post('/handleMainOption', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+  let selection = request.body.Digits;
+
+  let selectionMap = {
+    '1': '/sayRights',
+    '2': '/recordMessage',
+    '3': '/deployMessages'
+  }
+
+  twiml.say('You selected ' + selection, {voice: 'alice'});
+
+  let uri = selectionMap[selection];
+
+  twiml.redirect(uri);
+
+  response.type('text/xml');
+  response.send(twiml.toString());
+});
+
+app.post('/sayRights', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+
+  twiml.say('Here are your rights. To Do.', {voice: 'alice'});
+
+  response.type('text/xml');
+  response.send(twiml.toString());
+});
+
+app.post('/recordMessage', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+
+  twiml.say('Record your message after the beep. To Do.', {voice: 'alice'});
+
+  response.type('text/xml');
+  response.send(twiml.toString());
+});
 
 
 app.post('/deployMessages', (request, response) => {

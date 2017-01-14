@@ -9,11 +9,12 @@ const urlencoded = require('body-parser').urlencoded;
 
 // import Firebase from 'firebase';
 const firebase = require("firebase-admin");
-const serviceAccount = require("./igloo-7d549-firebase-adminsdk-s6ucw-914f7b873b.json");
+const serviceAccount =
+  require("./igloo-7d549-firebase-adminsdk-s6ucw-914f7b873b.json");
 // firebase.database.enableLogging(true)
 
-//Global instance variable
-var instanceUser = {}
+// Global instance variable
+var instanceUser = {};
 
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
@@ -29,7 +30,7 @@ app.use(urlencoded({
 const client = require('twilio')(accountSid, authToken);
 
 // Route to answer phone
-app.post('/answer', function (request, response) {
+app.post('/answer', function(request, response) {
   // Use the Twilio Node.js SDK to build an XML response
   let twiml = new twilio.TwimlResponse();
 
@@ -51,7 +52,7 @@ app.post('/getId', (request, response) => {
   twiml.gather({
     timeout: 10,
     action: '/validateId'
-  }, (gatherNode) => {
+  }, gatherNode => {
     gatherNode.say('Please enter your phone number and press pound.', {
       voice: 'alice'
     });
@@ -62,15 +63,13 @@ app.post('/getId', (request, response) => {
   // Render the response as XML in reply to the webhook request
   response.type('text/xml');
   response.send(twiml.toString());
-})
+});
 
 app.post('/validateId', (request, response) => {
-  console.log('validateId')
+  console.log('validateId');
   let twiml = new twilio.TwimlResponse();
 
   // let tempphoneNumber = request.query.id;
-  // let userId = tempphoneNumber;
-  // instanceUser.userId = userId;
   // console.log('posting…')
   // console.log('instanceuserID', instanceUser.userId)
 
@@ -80,7 +79,9 @@ app.post('/validateId', (request, response) => {
       voice: 'alice'
     });
 
+    let userId = phoneNumber;
     let uri = '/sayMainOptions/?id=' + userId;
+    instanceUser.userId = userId;
 
     twiml.redirect(uri);
   }
@@ -88,15 +89,11 @@ app.post('/validateId', (request, response) => {
   // Render the response as XML in reply to the webhook request
   response.type('text/xml');
   response.send(twiml.toString());
-})
+});
 
 app.post('/sayMainOptions', (request, response) => {
   // Use the Twilio Node.js SDK to build an XML response
   let twiml = new twilio.TwimlResponse();
-
-  if (request.query.id) {
-    let userId = request.query.id;
-  }
 
   twiml.say('Here are your options.', {
     voice: 'alice'
@@ -105,7 +102,7 @@ app.post('/sayMainOptions', (request, response) => {
   twiml.gather({
     timeout: 3,
     action: '/handleMainOption'
-  }, (gatherNode) => {
+  }, gatherNode => {
     gatherNode.say('Press 1 to hear your rights. Press 2 to record a message. Press 3 to send out your messages.', {
       voice: 'alice'
     });
@@ -116,7 +113,7 @@ app.post('/sayMainOptions', (request, response) => {
   // Render the response as XML in reply to the webhook request
   response.type('text/xml');
   response.send(twiml.toString());
-})
+});
 
 app.post('/handleMainOption', (request, response) => {
   let twiml = new twilio.TwimlResponse();
@@ -126,7 +123,7 @@ app.post('/handleMainOption', (request, response) => {
     '1': '/sayRights',
     '2': '/recordMessage',
     '3': '/deployMessages'
-  }
+  };
 
   twiml.say('You selected ' + selection, {
     voice: 'alice'
@@ -164,11 +161,10 @@ app.post('/recordMessage', (request, response) => {
     transcribe: false,
     maxLength: 30,
     action: '/handleRecording'
-  })
+  });
   response.type('text/xml');
   response.send(twiml.toString());
 });
-
 
 app.post('/handleRecording', (request, response) => {
   let twiml = new twilio.TwimlResponse();
@@ -186,7 +182,7 @@ app.post('/handleRecording', (request, response) => {
   twiml.gather({
     timeout: 3,
     action: confirmRecordingUri
-  }, (gatherNode) => {
+  }, gatherNode => {
     gatherNode.say('Press 1 to confirm and send your messages. Press 2 to record again. Press 3 to return to the main menu.', {
       voice: 'alice'
     });
@@ -198,7 +194,6 @@ app.post('/handleRecording', (request, response) => {
   response.send(twiml.toString());
 });
 
-
 app.post('/confirmRecording', (request, response) => {
   let twiml = new twilio.TwimlResponse();
 
@@ -206,43 +201,34 @@ app.post('/confirmRecording', (request, response) => {
   let selection = request.body.Digits;
 
   let selectionMap = {
-      '1': '/deployMessages/?recordingUrl=' + recordingUrl,
-      '2': '/recordMessage',
-      '3': '/sayMainOptions'
-    }
+    '1': '/deployMessages/?recordingUrl=' + recordingUrl,
+    '2': '/recordMessage',
+    '3': '/sayMainOptions'
+  };
     // twiml.redirect('/handleRecording');
 
   twiml.redirect(selectionMap[selection]);
 
-
   response.type('text/xml');
   response.send(twiml.toString());
-})
-
+});
 
 app.post('/deployMessages', (request, response) => {
-  let twiml = new twilio.TwimlResponse();
-  // handle incoming deploy
-  // console.log(Users);
-  let userId = request.query.id;
   console.log('Instance user id', instanceUser.userId);
-  console.log(userId);
   // get user data, then based on the contact list, send out the messages
-  getUserData(userId).then(payload => {
+  getUserData(instanceUser.userId).then(payload => {
     console.log('payload', payload);
     for (let contact of payload.contacts) {
-      console.log('sending…messages…')
-      console.log(`${contact.phoneNumber}: ${contact.message}`)
-        // console.log(contact);
-        //sendText(contact.phoneNumber, contact.message);
+      console.log('sending…messages…');
+      console.log(`${contact.phoneNumber}: ${contact.message}`);
+
+      sendText(contact.phoneNumber, contact.message);
 
       if (request.query.recordingUrl) {
-        // sendText(contact.phoneNumber, request.query.recordingUrl);
+        sendText(contact.phoneNumber, request.query.recordingUrl);
       }
-
     }
-  })
-
+  });
 });
 
 app.post('/deployMessagesFromApp', (request, response) => {
@@ -251,30 +237,35 @@ app.post('/deployMessagesFromApp', (request, response) => {
   getUserData(userId).then(payload => {
     console.log('payload', payload);
     for (let contact of payload.contacts) {
-      console.log('sending…messages…')
-      console.log(`${contact.phoneNumber}: ${contact.message}`)
+      console.log('sending…messages…');
+      console.log(`${contact.phoneNumber}: ${contact.message}`);
       sendText(contact.phoneNumber, contact.message);
     }
-  })
+  });
 
   console.log('your messages have been sent.');
   response.status(200).send('POST request to homepage');
-})
-
+});
 
 app.get('/data', (request, response) => {
-  //get the user id
-  let userId = request.query.id
-  console.log('request id', userId)
-    //lookup the user id
+  // get the user id
+  let userId = request.query.id;
+  console.log('request id', userId);
+    // lookup the user id
   getUserData(userId).then(payload => {
-    //return the contacts data
-    response.send(payload)
-  })
-})
-
+    // return the contacts data
+    response.send(payload);
+  });
+});
 
 // Helpers
+
+/**
+ * Send a SMS Text message through/from Twilio.
+ * @param {String} number the recipients phone number.
+ * @param {String} message message to be sent.
+ * @param {Object} options any options that need to be passed through.
+ */
 function sendText(number, message, options) {
   // var client = require('twilio')(accountSid, authToken);
   console.log('sending text');
@@ -282,7 +273,7 @@ function sendText(number, message, options) {
     to: number,
     from: "+16506655133",
     body: message
-  }, function (err, message) {
+  }, function(err, message) {
     if (err) {
       console.log("ERROR:", err);
     }
@@ -293,20 +284,19 @@ function sendText(number, message, options) {
 /**
  * Retrieves user data from Firebase
  * @param {String} userId the users unique id, phone number as a string
+ * @return {Promise} firebase user data object.
  */
 function getUserData(userId) {
-
   let ref = firebase.database().ref('users/' + userId);
   return new Promise(resolve => {
-    ref.once('value', function (snapshot) {
-      console.log('snapshot', snapshot.val())
-      resolve(snapshot.val())
+    ref.once('value', function(snapshot) {
+      console.log('snapshot', snapshot.val());
+      resolve(snapshot.val());
     });
-
-  })
+  });
 }
 
-// TESTING functions
+// TESTING functions.
 // test functions execute the same logic as the "real" functions without
 //  actually sending messages through Twilio.
 //
@@ -323,7 +313,7 @@ app.post('/test', (request, response) => {
     for (let c of payload.contacts) {
       testSendText(c.phoneNumber, c.message);
     }
-  })
+  });
 
   // console.log('your messages have been sent.');
   response.status(200).send('POST request to homepage');

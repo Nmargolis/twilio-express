@@ -4,7 +4,6 @@ const watch = require('gulp-watch');
 const spawn = require('child_process').spawn;
 
 gulp.task('default', ['js', 'copy', 'watch']);
-gulp.task('deploy', ['js', 'copy', 'serve']);
 
 gulp.task('js', () => {
     return gulp.src('src/**/*.js')
@@ -19,7 +18,7 @@ gulp.task('copy', () => {
     .pipe(gulp.dest('dist'));
 })
 
-gulp.task('serve', function() {
+gulp.task('serve', ['js', 'copy'], function() {
   spawn('node', ['dist/server.js'], { stdio: 'inherit' });
 });
 

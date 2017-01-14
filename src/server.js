@@ -81,7 +81,7 @@ app.post('/sayMainOptions', (request, response) => {
 
   twiml.say('Here are your options.', { voice: 'alice' });
 
-  twiml.gather({ timeout: 5, action: '/handleMainOption'}, (gatherNode) => {
+  twiml.gather({ timeout: 3, action: '/handleMainOption'}, (gatherNode) => {
     gatherNode.say('Press 1 to hear your rights. Press 2 to record a message. Press 3 to send out your messages.', { voice: 'alice'});
   });
 
@@ -115,7 +115,9 @@ app.post('/handleMainOption', (request, response) => {
 app.post('/sayRights', (request, response) => {
   let twiml = new twilio.TwimlResponse();
 
-  twiml.say('Here are your rights. To Do.', {voice: 'alice'});
+  twiml.say('Here are your rights. Coming soon.', {voice: 'alice'});
+
+  twiml.redirect('/sayMainOptions');
 
   response.type('text/xml');
   response.send(twiml.toString());
@@ -154,12 +156,12 @@ app.post('/handleRecording', (request, response) => {
   // console.log(request.body);
 
   let recordingUrl = request.body.RecordingUrl;
-  twiml.say('Your recorded message is: ');
+  twiml.say('Your recorded message is: ', {voice: 'alice'});
   twiml.play(recordingUrl);
 
   let confirmRecordingUri = '/confirmRecording/?recordingUrl=' + recordingUrl;
 
-  twiml.gather({ timeout: 10, action: confirmRecordingUri}, (gatherNode) => {
+  twiml.gather({ timeout: 3, action: confirmRecordingUri}, (gatherNode) => {
     gatherNode.say('Press 1 to confirm and send your messages. Press 2 to record again. Press 3 to return to the main menu.', { voice: 'alice'});
   });
 
@@ -204,7 +206,7 @@ app.post('/deployMessages', (request, response) => {
     }
   }
 
-  twiml.say('Your messages have been sent.');
+  twiml.say('Your messages have been sent.', {voice: 'alice'});
   response.type('text/xml');
   response.send(twiml.toString());
 });

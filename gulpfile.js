@@ -4,7 +4,7 @@ const gulp = require('gulp'),
   gls = require('gulp-live-server');
 
 
-gulp.task('default', ['js', 'watch']);
+gulp.task('default', ['js', 'copy', 'watch']);
 
 gulp.task('js', () => {
     return gulp.src('src/**/*.js')
@@ -13,6 +13,11 @@ gulp.task('js', () => {
         }))
         .pipe(gulp.dest('dist'));
 });
+
+gulp.task('copy', () => {
+    return gulp.src('src/**/*.json')
+    .pipe(gulp.dest('dist'));
+})
 
 
 // gulp.task('serve', function() {

@@ -8,8 +8,23 @@ const twilio = require('twilio');
 const express = require('express');
 const urlencoded = require('body-parser').urlencoded;
 
+
 // Static data
 import Data from './data';
+
+// import Firebase from 'firebase';
+const firebase = require("firebase-admin");
+const serviceAccount = require("./igloo-7d549-firebase-adminsdk-s6ucw-914f7b873b.json");
+// firebase.database.enableLogging(true)
+
+
+firebase.initializeApp({
+  credential: firebase.credential.cert(serviceAccount),
+  databaseURL: "https://igloo-7d549.firebaseio.com"
+});
+
+//Gets user Data from Firebase
+getUserData('000').then(payload => {console.log('userdata payload', payload)})
 
 const app = express();
 app.use(urlencoded({
@@ -144,6 +159,17 @@ app.post('/deployMessages', (request, response) => {
   response.send(twiml.toString());
 });
 
+app.get('/data', (request, response) => {
+  //get the user id
+  let userId = request.query.id
+  console.log('request id', userId)
+  //lookup the user id
+  getUserData(userId).then(payload => {
+    //return the contacts data
+    response.send(payload)
+  })
+})
+
 // Helpers
 function sendText(number, message) {
   // var client = require('twilio')(accountSid, authToken);
@@ -160,6 +186,21 @@ function sendText(number, message) {
   });
 }
 
+/**
+ * Retrieves user data from Firebase
+ * @param {String} userId the users unique id, phone number as a string
+ */
+function getUserData(userId) {
+
+  let ref = firebase.database().ref('users/' + userId);
+  return new Promise(resolve => {
+    ref.once('value', function (snapshot) {
+      console.log('snapshot', snapshot.val())
+      resolve(snapshot.val())
+    });
+
+  })
+}
 // TESTING functions
 // test functions execute the same logic as the "real" functions without
 //  actually sending messages through Twilio.

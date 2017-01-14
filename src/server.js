@@ -12,7 +12,8 @@ const firebase = require("firebase-admin");
 const serviceAccount = require("./igloo-7d549-firebase-adminsdk-s6ucw-914f7b873b.json");
 // firebase.database.enableLogging(true)
 
-const instanceUser = {}
+//Global instance variable
+var instanceUser = {}
 
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
@@ -67,11 +68,11 @@ app.post('/validateId', (request, response) => {
   console.log('validateId')
   let twiml = new twilio.TwimlResponse();
 
-    let tempphoneNumber = request.query.id;
-    let userId = tempphoneNumber;
-    instanceUser.userId = userId;
-    console.log('posting…')
-    console.log('instanceuserID', instanceUser.userId)
+  // let tempphoneNumber = request.query.id;
+  // let userId = tempphoneNumber;
+  // instanceUser.userId = userId;
+  // console.log('posting…')
+  // console.log('instanceuserID', instanceUser.userId)
 
   if (request.body.Digits) {
     let phoneNumber = request.body.Digits;
@@ -223,37 +224,40 @@ app.post('/deployMessages', (request, response) => {
   let twiml = new twilio.TwimlResponse();
   // handle incoming deploy
   // console.log(Users);
-
-  // get user data, then based on the contact list, send out the messages
-  for (let contact of Users['15104499800'].contacts) {
-    // console.log(contact);
-    sendText(contact.phoneNumber, contact.message);
-
-    if (request.query.recordingUrl) {
-      sendText(contact.phoneNumber, request.query.recordingUrl);
-    }
-  }
-
-});
-
-app.post('/deployMessagesFromApp', (request, response) => {
-  // getUserData();
-  console.log()
-  if (request.query.id){
-    let userId  = request.query.id;
-  }
+  let userId = request.query.id;
   console.log('Instance user id', instanceUser.userId);
   console.log(userId);
+  // get user data, then based on the contact list, send out the messages
   getUserData(userId).then(payload => {
     console.log('payload', payload);
     for (let contact of payload.contacts) {
       console.log('sending…messages…')
       console.log(`${contact.phoneNumber}: ${contact.message}`)
-      // sendText(contact.phoneNumber, contact.message);
+        // console.log(contact);
+        //sendText(contact.phoneNumber, contact.message);
+
+      if (request.query.recordingUrl) {
+        // sendText(contact.phoneNumber, request.query.recordingUrl);
+      }
+
     }
   })
 
-  // console.log('your messages have been sent.');
+});
+
+app.post('/deployMessagesFromApp', (request, response) => {
+  let userId = request.query.id;
+
+  getUserData(userId).then(payload => {
+    console.log('payload', payload);
+    for (let contact of payload.contacts) {
+      console.log('sending…messages…')
+      console.log(`${contact.phoneNumber}: ${contact.message}`)
+      sendText(contact.phoneNumber, contact.message);
+    }
+  })
+
+  console.log('your messages have been sent.');
   response.status(200).send('POST request to homepage');
 })
 

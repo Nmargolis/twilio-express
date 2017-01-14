@@ -340,5 +340,5 @@ function testSendText(number, message) {
 }
 
 // Create an HTTP server and listen for requests on port 8080
-app.listen(8080);
-console.log('Server running at http://127.0.0.1:8080/');
+app.listen(process.env.PORT || 8080);
+console.log('Server Started!');

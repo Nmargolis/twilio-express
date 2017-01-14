@@ -1,15 +1,15 @@
-// const accountSid = secrets.secrets.TWACCOUNTSID;
-// const authToken = secrets.secrets.TWAUTHTOKEN;
+// Static data
+import Users from './data';
+import Secrets from './setup';
+
+// const accountSid = Secrets.TWACCOUNTSID;
+// const authToken = Secrets.TWAUTHTOKEN;
 const accountSid = process.env.TWACCOUNTSID;
 const authToken = process.env.TWAUTHTOKEN;
 
-// const http = require('http'); //Never used
 const twilio = require('twilio');
 const express = require('express');
 const urlencoded = require('body-parser').urlencoded;
-
-// Static data
-import Data from './data';
 
 const app = express();
 app.use(urlencoded({
@@ -23,11 +23,12 @@ const client = require('twilio')(accountSid, authToken);
 app.post('/answer', function(request, response) {
   // Use the Twilio Node.js SDK to build an XML response
   let twiml = new twilio.TwimlResponse();
+
+  // twiml.redirect('/deployMessages');
   // let fromNumber = request.body.From;
   twiml.say('Hello, you have reached the network activation center.', {
     voice: 'alice'
   });
-
 
   twiml.redirect('/getId');
 
@@ -76,8 +77,6 @@ app.post('/sayMainOptions', (request, response) => {
 
   if (request.query.id) {
     let userId = request.query.id;
-
-    twiml.say('Your id is ' + userId + '.');
   }
 
   twiml.say('Here are your options.', { voice: 'alice' });
@@ -125,16 +124,18 @@ app.post('/sayRights', (request, response) => {
 app.post('/recordMessage', (request, response) => {
   let twiml = new twilio.TwimlResponse();
 
-  twiml.say('Record your message after the beep.', {voice: 'alice'});
+  twiml.say('Record your message after the beep and press pound.', {voice: 'alice'});
 
-  twiml.record({transcribe: true, maxLength: 30, recordingStatusCallback: '/recordingCallback'})
+  twiml.record({transcribe: false, maxLength: 30, recordingStatusCallback: '/recordingCallback', action: '/handleRecording'})
   response.type('text/xml');
   response.send(twiml.toString());
 });
 
 app.post('/recordingCallback', (request, response) => {
   let twiml = new twilio.TwimlResponse();
+  console.log('this is the callback');
   console.log(request.body.RecordingUrl);
+  console.log()
 
   let recordingUrl = request.body.RecordingUrl;
 
@@ -150,17 +151,20 @@ app.post('/recordingCallback', (request, response) => {
 
 app.post('/handleRecording', (request, response) => {
   let twiml = new twilio.TwimlResponse();
+  console.log('this is the action');
+  console.log(request.body);
 
-  console.log(request.body)
   response.type('text/xml');
   response.send(twiml.toString());
 })
 
 app.post('/deployMessages', (request, response) => {
   let twiml = new twilio.TwimlResponse();
+  console.log(Users);
 
-  for (let contact of Data) {
-    testSendText(contact.phoneNumber, contact.message);
+  for (let contact of Users['15104499800'].contacts) {
+    console.log(contact);
+    sendText(contact.phoneNumber, contact.message);
   }
 
   twiml.say('Your messages have been sent.');
@@ -172,17 +176,18 @@ app.post('/deployMessages', (request, response) => {
 // Helpers
 function sendText(number, message) {
   // var client = require('twilio')(accountSid, authToken);
-
+  console.log('sending text');
   client.messages.create({
     to: number,
-    from: "+15103700864",
+    from: "+16506655133",
     body: message
   }, function(err, message) {
     if (err) {
       console.log("ERROR:", err);
     }
     console.log(message.sid);
-
+  });
+}
 // TESTING functions
 // test functions execute the same logic as the "real" functions without
 //  actually sending messages through Twilio.
@@ -193,7 +198,7 @@ function sendText(number, message) {
  */
 app.post('/test', (request, response) => {
   // getUserData();
-  for (let c of Data) {
+  for (let c of Users['15104499800'].contacts) {
     testSendText(c.phoneNumber, c.message);
   }
   console.log('your messages have been sent.');
@@ -208,7 +213,7 @@ app.post('/test', (request, response) => {
 function testSendText(number, message) {
   let clientMessage = {
     to: number,
-    from: "+15103700864",
+    from: "+16506655133",
     body: message
   };
   console.log(clientMessage);

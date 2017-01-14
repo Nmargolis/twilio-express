@@ -16,6 +16,9 @@ const serviceAccount =
 // Global instance variable
 var instanceUser = {};
 
+// Header message to be sent before all text SMS messages
+const headerMessage = "⚠️ ALERT! Emergency Message from the Network Activation Center ⚠️";
+
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
   databaseURL: "https://igloo-7d549.firebaseio.com"
@@ -222,12 +225,18 @@ app.post('/deployMessages', (request, response) => {
       console.log('sending…messages…');
       console.log(`${contact.phoneNumber}: ${contact.message}`);
 
-      sendText(contact.phoneNumber, contact.message);
+      // Combine message with Header before sending.
+      let message = headerMessage + "\n----\n" + contact.message;
+      sendText(contact.phoneNumber, message);
 
+      // If the user records a voice-recording, send the link to the voice recording
       if (request.query.recordingUrl) {
         sendText(contact.phoneNumber, request.query.recordingUrl);
       }
     }
+
+    //TODO: twiml.say('your messages have been sent.
+    // Press 0 to return to the main menu or hangup to end this call)
   });
 });
 
@@ -239,7 +248,10 @@ app.post('/deployMessagesFromApp', (request, response) => {
     for (let contact of payload.contacts) {
       console.log('sending…messages…');
       console.log(`${contact.phoneNumber}: ${contact.message}`);
-      sendText(contact.phoneNumber, contact.message);
+      // Combine message with Header before sending.
+      let message = headerMessage + "\n----\n" + contact.message;
+      //Send User defined, pre-composed message
+      sendText(contact.phoneNumber, message);
     }
   });
 
@@ -310,8 +322,9 @@ app.post('/test', (request, response) => {
   console.log(userId);
   getUserData(userId).then(payload => {
     console.log('payload', payload);
-    for (let c of payload.contacts) {
-      testSendText(c.phoneNumber, c.message);
+    for (let contact of payload.contacts) {
+      let message = headerMessage + "\n----\n" + contact.message;
+      testSendText(contact.phoneNumber, message);
     }
   });
 

@@ -24,8 +24,6 @@ app.post('/answer', function(request, response) {
   // Use the Twilio Node.js SDK to build an XML response
   let twiml = new twilio.TwimlResponse();
 
-  // twiml.redirect('/deployMessages');
-  // let fromNumber = request.body.From;
   twiml.say('Hello, you have reached the network activation center.', {
     voice: 'alice'
   });
@@ -133,22 +131,6 @@ app.post('/recordMessage', (request, response) => {
   response.send(twiml.toString());
 });
 
-app.post('/recordingCallback', (request, response) => {
-  let twiml = new twilio.TwimlResponse();
-  console.log('this is the callback');
-  console.log(request.body.RecordingUrl);
-
-  let recordingUrl = request.body.RecordingUrl;
-
-  sendText('+15104499800', recordingUrl);
-
-  // twiml.redirect('/sayMainOptions');
-
-  // twiml.say('Record your message after the beep. To Do.', {voice: 'alice'});
-
-  response.type('text/xml');
-  response.send(twiml.toString());
-});
 
 app.post('/handleRecording', (request, response) => {
   let twiml = new twilio.TwimlResponse();
@@ -165,7 +147,7 @@ app.post('/handleRecording', (request, response) => {
     gatherNode.say('Press 1 to confirm and send your messages. Press 2 to record again. Press 3 to return to the main menu.', { voice: 'alice'});
   });
 
-  // twiml.redirect('/handleRecording');
+  twiml.redirect('/handleRecording');
 
   response.type('text/xml');
   response.send(twiml.toString());

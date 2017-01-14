@@ -19,13 +19,11 @@ gulp.task('copy', () => {
     .pipe(gulp.dest('dist'));
 })
 
-
 // gulp.task('serve', function() {
 //   // begin proxying port from johnny-cage.
 //   var server = gls.new('dist/server.js');
 //   server.start();
 // });
-
 
 gulp.task('watch', function () {
     // Callback mode, useful if any plugin in the pipeline depends on the `end`/`flush` event 

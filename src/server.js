@@ -1,16 +1,15 @@
-// const accountSid = secrets.secrets.TWACCOUNTSID;
-// const authToken = secrets.secrets.TWAUTHTOKEN;
-const accountSid = process.env.TWACCOUNTSID;
-const authToken = process.env.TWAUTHTOKEN;
+// Static data
+import Users from './data';
+import Secrets from './setup';
 
-// const http = require('http'); //Never used
+const accountSid = Secrets.TWACCOUNTSID;
+const authToken = Secrets.TWAUTHTOKEN;
+// const accountSid = process.env.TWACCOUNTSID;
+// const authToken = process.env.TWAUTHTOKEN;
+
 const twilio = require('twilio');
 const express = require('express');
 const urlencoded = require('body-parser').urlencoded;
-
-
-// Static data
-import Data from './data';
 
 // import Firebase from 'firebase';
 const firebase = require("firebase-admin");
@@ -38,11 +37,10 @@ const client = require('twilio')(accountSid, authToken);
 app.post('/answer', function(request, response) {
   // Use the Twilio Node.js SDK to build an XML response
   let twiml = new twilio.TwimlResponse();
-  // let fromNumber = request.body.From;
+
   twiml.say('Hello, you have reached the network activation center.', {
     voice: 'alice'
   });
-
 
   twiml.redirect('/getId');
 
@@ -91,13 +89,11 @@ app.post('/sayMainOptions', (request, response) => {
 
   if (request.query.id) {
     let userId = request.query.id;
-
-    twiml.say('Your id is ' + userId + '.');
   }
 
   twiml.say('Here are your options.', { voice: 'alice' });
 
-  twiml.gather({ timeout: 5, action: '/handleMainOption'}, (gatherNode) => {
+  twiml.gather({ timeout: 3, action: '/handleMainOption'}, (gatherNode) => {
     gatherNode.say('Press 1 to hear your rights. Press 2 to record a message. Press 3 to send out your messages.', { voice: 'alice'});
   });
 
@@ -131,7 +127,9 @@ app.post('/handleMainOption', (request, response) => {
 app.post('/sayRights', (request, response) => {
   let twiml = new twilio.TwimlResponse();
 
-  twiml.say('Here are your rights. To Do.', {voice: 'alice'});
+  twiml.say('Here are your rights. Coming soon.', {voice: 'alice'});
+
+  twiml.redirect('/sayMainOptions');
 
   response.type('text/xml');
   response.send(twiml.toString());
@@ -140,24 +138,75 @@ app.post('/sayRights', (request, response) => {
 app.post('/recordMessage', (request, response) => {
   let twiml = new twilio.TwimlResponse();
 
-  twiml.say('Record your message after the beep. To Do.', {voice: 'alice'});
+  twiml.say('Record your message after the beep and press pound.', {voice: 'alice'});
+
+  twiml.record({transcribe: false, maxLength: 30, action: '/handleRecording'})
+  response.type('text/xml');
+  response.send(twiml.toString());
+});
+
+
+app.post('/handleRecording', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+  // console.log('this is the action');
+  // console.log(request.body);
+
+  let recordingUrl = request.body.RecordingUrl;
+  twiml.say('Your recorded message is: ', {voice: 'alice'});
+  twiml.play(recordingUrl);
+
+  let confirmRecordingUri = '/confirmRecording/?recordingUrl=' + recordingUrl;
+
+  twiml.gather({ timeout: 3, action: confirmRecordingUri}, (gatherNode) => {
+    gatherNode.say('Press 1 to confirm and send your messages. Press 2 to record again. Press 3 to return to the main menu.', { voice: 'alice'});
+  });
+
+  twiml.redirect('/handleRecording');
 
   response.type('text/xml');
   response.send(twiml.toString());
 });
+
+
+app.post('/confirmRecording', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+
+  let recordingUrl = request.query.recordingUrl;
+  let selection = request.body.Digits;
+
+  let selectionMap = {
+    '1': '/deployMessages/?recordingUrl='+recordingUrl,
+    '2': '/recordMessage',
+    '3': '/sayMainOptions'
+  }
+  // twiml.redirect('/handleRecording');
+
+  twiml.redirect(selectionMap[selection]);
+
+
+  response.type('text/xml');
+  response.send(twiml.toString());
+})
 
 
 app.post('/deployMessages', (request, response) => {
   let twiml = new twilio.TwimlResponse();
+  // console.log(Users);
 
-  for (let contact of Data) {
-    testSendText(contact.phoneNumber, contact.message);
+  for (let contact of Users['15104499800'].contacts) {
+    // console.log(contact);
+    sendText(contact.phoneNumber, contact.message);
+
+    if (request.query.recordingUrl) {
+      sendText(contact.phoneNumber, request.query.recordingUrl);
+    }
   }
 
-  twiml.say('Your messages have been sent.');
+  twiml.say('Your messages have been sent.', {voice: 'alice'});
   response.type('text/xml');
   response.send(twiml.toString());
 });
+
 
 app.get('/data', (request, response) => {
   //get the user id
@@ -170,13 +219,14 @@ app.get('/data', (request, response) => {
   })
 })
 
-// Helpers
-function sendText(number, message) {
-  // var client = require('twilio')(accountSid, authToken);
 
+// Helpers
+function sendText(number, message, options) {
+  // var client = require('twilio')(accountSid, authToken);
+  console.log('sending text');
   client.messages.create({
     to: number,
-    from: "+15103700864",
+    from: "+16506655133",
     body: message
   }, function(err, message) {
     if (err) {
@@ -201,6 +251,7 @@ function getUserData(userId) {
 
   })
 }
+
 // TESTING functions
 // test functions execute the same logic as the "real" functions without
 //  actually sending messages through Twilio.
@@ -211,7 +262,7 @@ function getUserData(userId) {
  */
 app.post('/test', (request, response) => {
   // getUserData();
-  for (let c of Data) {
+  for (let c of Users['15104499800'].contacts) {
     testSendText(c.phoneNumber, c.message);
   }
   console.log('your messages have been sent.');
@@ -226,7 +277,7 @@ app.post('/test', (request, response) => {
 function testSendText(number, message) {
   let clientMessage = {
     to: number,
-    from: "+15103700864",
+    from: "+16506655133",
     body: message
   };
   console.log(clientMessage);

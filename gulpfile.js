@@ -1,10 +1,10 @@
-const gulp = require('gulp'),
-  babel = require('gulp-babel'),
-  watch = require('gulp-watch'),
-  gls = require('gulp-live-server');
-
+const gulp = require('gulp');
+const babel = require('gulp-babel');
+const watch = require('gulp-watch');
+const spawn = require('child_process').spawn;
 
 gulp.task('default', ['js', 'copy', 'watch']);
+gulp.task('deploy', ['js', 'copy', 'serve']);
 
 gulp.task('js', () => {
     return gulp.src('src/**/*.js')
@@ -19,11 +19,9 @@ gulp.task('copy', () => {
     .pipe(gulp.dest('dist'));
 })
 
-// gulp.task('serve', function() {
-//   // begin proxying port from johnny-cage.
-//   var server = gls.new('dist/server.js');
-//   server.start();
-// });
+gulp.task('serve', function() {
+  spawn('node', ['dist/server.js'], { stdio: 'inherit' });
+});
 
 gulp.task('watch', function () {
     // Callback mode, useful if any plugin in the pipeline depends on the `end`/`flush` event 

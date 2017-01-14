@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "./dist/server.js",
+  "engines": {
+    "node": "6.9.1"
+  },
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
@@ -21,8 +24,6 @@
     "gulp-watch": "^4.3.11"
   },
   "scripts": {
-    "preinstall": "gulp",
-    "build": "gulp",
     "start": "node dist/server.js"
   },
   "author": "",

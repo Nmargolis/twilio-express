@@ -2,10 +2,10 @@
 import Users from './data';
 import Secrets from './setup';
 
-// const accountSid = Secrets.TWACCOUNTSID;
-// const authToken = Secrets.TWAUTHTOKEN;
-const accountSid = process.env.TWACCOUNTSID;
-const authToken = process.env.TWAUTHTOKEN;
+const accountSid = Secrets.TWACCOUNTSID;
+const authToken = Secrets.TWAUTHTOKEN;
+// const accountSid = process.env.TWACCOUNTSID;
+// const authToken = process.env.TWAUTHTOKEN;
 
 const twilio = require('twilio');
 const express = require('express');
@@ -126,7 +126,7 @@ app.post('/recordMessage', (request, response) => {
 
   twiml.say('Record your message after the beep and press pound.', {voice: 'alice'});
 
-  twiml.record({transcribe: false, maxLength: 30, recordingStatusCallback: '/recordingCallback', action: '/handleRecording'})
+  twiml.record({transcribe: false, maxLength: 30, action: '/handleRecording'})
   response.type('text/xml');
   response.send(twiml.toString());
 });
@@ -135,7 +135,6 @@ app.post('/recordingCallback', (request, response) => {
   let twiml = new twilio.TwimlResponse();
   console.log('this is the callback');
   console.log(request.body.RecordingUrl);
-  console.log()
 
   let recordingUrl = request.body.RecordingUrl;
 
@@ -151,20 +150,58 @@ app.post('/recordingCallback', (request, response) => {
 
 app.post('/handleRecording', (request, response) => {
   let twiml = new twilio.TwimlResponse();
-  console.log('this is the action');
-  console.log(request.body);
+  // console.log('this is the action');
+  // console.log(request.body);
+
+  let recordingUrl = request.body.RecordingUrl;
+  twiml.say('Your recorded message is: ');
+  twiml.play(recordingUrl);
+
+  let confirmRecordingUri = '/confirmRecording/?recordingUrl=' + recordingUrl;
+
+  twiml.gather({ timeout: 10, action: confirmRecordingUri}, (gatherNode) => {
+    gatherNode.say('Press 1 to confirm and send your messages. Press 2 to record again. Press 3 to return to the main menu.', { voice: 'alice'});
+  });
+
+  // twiml.redirect('/handleRecording');
+
+  response.type('text/xml');
+  response.send(twiml.toString());
+});
+
+
+app.post('/confirmRecording', (request, response) => {
+  let twiml = new twilio.TwimlResponse();
+
+  let recordingUrl = request.query.recordingUrl;
+  let selection = request.body.Digits;
+
+  let selectionMap = {
+    '1': '/deployMessages/?recordingUrl='+recordingUrl,
+    '2': '/recordMessage',
+    '3': '/sayMainOptions'
+  }
+  // twiml.redirect('/handleRecording');
+
+  twiml.redirect(selectionMap[selection]);
+
 
   response.type('text/xml');
   response.send(twiml.toString());
 })
 
+
 app.post('/deployMessages', (request, response) => {
   let twiml = new twilio.TwimlResponse();
-  console.log(Users);
+  // console.log(Users);
 
   for (let contact of Users['15104499800'].contacts) {
-    console.log(contact);
+    // console.log(contact);
     sendText(contact.phoneNumber, contact.message);
+
+    if (request.query.recordingUrl) {
+      sendText(contact.phoneNumber, request.query.recordingUrl);
+    }
   }
 
   twiml.say('Your messages have been sent.');
@@ -174,7 +211,7 @@ app.post('/deployMessages', (request, response) => {
 
 
 // Helpers
-function sendText(number, message) {
+function sendText(number, message, options) {
   // var client = require('twilio')(accountSid, authToken);
   console.log('sending text');
   client.messages.create({

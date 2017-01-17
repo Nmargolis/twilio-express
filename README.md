@@ -24,7 +24,7 @@ export TWACCOUNTSID='your_twilio_account_sid'
 export TWAUTHTOKEN='your_twilio_autho_token'
 ```
 
-* Also change the "From" phone number in sendText() in server.js
+* Also change the "From" phone number in `sendText()` in server.js
 
 OPTIONAL: Install nodemon globally to automatically restart the server as you work
 
@@ -34,25 +34,20 @@ npm install -g nodemon
 
 
 ### Running the app
-
-In a terminal window, start gulp
-
+In a terminal window, run gulp. Gulp compiles the `src/` directory, watches for file changes in `src`, and builds to `dist/`
 ```
 gulp
 ```
 
-In another terminal window, start the server.
-If you have nodemon installed:
+Run the server with:
 ```
-nodemon dist/server.js
-```
-Otherwise:
-```
-node dist/server.js
+gulp serve
 ```
 
-## Deployment
+Alternatively, run `dist/server.js` manually using `node dist/server.js` or `nodemon dist/server.js` if [nodemon](https://github.com/remy/nodemon) is installed.
 
+
+## Local (testing) & Twilio deployment
 To connect this app and Twilio, the app needs to be deployed.
 
 A quick way to do this during development is to expose the port your server is running on to make it public with ngrok.
@@ -71,6 +66,7 @@ ngrok http 8080
 * Go to your Twilio console in the browser and navigate to "Manage numbers"
 
 * Click on the number you're using, and add the ngrok url with the route '/answer' as the webhook for receiving calls
+
 
 
 ## License
